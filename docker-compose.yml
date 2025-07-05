@@ -1,0 +1,40 @@
+version: '3'
+services:
+  # Authentication Service
+  auth_service:
+    build:
+      context: ./auth_service
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./auth_service:/app  # Mount local directory to persist database
+    networks:
+      - app_network
+
+  # Comment Service
+  comment_service:
+    build:
+      context: ./comment_service
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./comment_service:/app  # Mount local directory to persist database
+    networks:
+      - app_network
+
+  # Video Service
+  video_service:
+    build:
+      context: ./video_service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./video_service:/app  # Mount local directory to persist database
+      - ./video_service/uploads:/app/uploads  # Directory for file uploads
+    networks:
+      - app_network
+
+# Network for service discovery
+networks:
+  app_network:
+    driver: bridge

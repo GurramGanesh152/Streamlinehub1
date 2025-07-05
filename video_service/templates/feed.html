@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streamline hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #upload {
+            width: 100%;
+            height: 100vh;
+            display: none;
+            padding: auto;
+        }
+
+        h1 {
+            text-align: left;
+            color: #333;
+        }
+        .mm{
+            color: #555;
+            text-align: center;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        input[type="text"],
+        input[type="file"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #hdr {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .videos {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .video {
+            position: relative;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 5px;
+            width: 280px;
+            margin: 5px;
+        }
+
+        .video video {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        .comment-section {
+            position: absolute;
+            overflow-y: auto;
+            margin-top: 10px;
+            height: 100px;
+        }
+
+        .comment-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .comment-input input[type="text"] {
+            flex: 1;
+        }
+
+        .comment-list {
+            margin-top: 10px;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            display: block;
+            max-height: 200px;
+        }
+
+        .comment-input textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            line-height: 1.4;
+            font-family: Arial, sans-serif;
+        }
+
+        .comment {
+            background: #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .commentt {
+            border: 1px solid #ccc;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .user-id {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .content {
+            margin-top: 4px;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .video {
+                flex: 1 1 calc(45% - 20px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="upload">
+        <h2 class="mm">Upload a New Video</h2>
+    <form id="uploadForm" action="/videos?token={{ request.args.get('token') }}" method="POST" enctype="multipart/form-data">
+        <label>Caption:</label>
+        <input type="text" name="caption" placeholder="Write a caption..."><br>
+        <label>Video:</label>
+        <input type="file" name="video" accept="video/*"><br>
+        <span>
+            <button type="button" onclick="toggleupload()">Cancel</button>
+            <button type="submit">Upload</button>
+        </span>
+    </form>
+    </div>
+
+    <span id="hdr"><h1>Welcome to STREAMLINE HUB {{ user_id }}!</h1> <button style="margin: auto 5px;" onclick="toggleupload()"><bold>UPLOAD</bold></button></span>
+
+    <div class="videos">
+        {% for video in videos %}
+            <div class="video">
+                <video controls>
+                    <source src="{{ url_for('uploaded_file', filename=video.video_path) }}" type="video/{{ video.video_path.split('.')[-1] }}">
+                    Your browser does not support the video tag.
+                </video>
+                <h3>{{ video.user_id }} - {{ video.caption }}</h3>
+                <button aria-label="Toggle comments" onclick="toggleComments({{ video.id }})">💬</button>
+                <button id="like-button-{{ video.id }}" onclick="toggleLike({{ video.id }})">🤍</button>
+
+                <div class="comment-section">
+
+                    <div class="comment-input" style="display: none;" id="comment-input-{{ video.id }}">
+                        <textarea placeholder="Write a comment..." name="comment" id="comment-{{ video.id }}" rows="2"></textarea>
+                        <button onclick="submitComment({{ video.id }})">Submit</button>
+                    </div>
+
+                    <div style="display: none;" class="comment-list" id="comment-list-{{ video.id }}">
+                        <h3>Comments</h3>
+                        {% for comment in video.comments %}
+                            <div class="commentt">
+                                <div class="user-id">
+                                    <strong>User {{ comment.user_id }}</strong>
+                                </div>
+                                <div class="content">
+                                    {{ comment.content }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function toggleLike(videoId) {
+            const likeButton = document.getElementById(`like-button-${videoId}`);
+            if (likeButton.textContent === '🤍') {
+                likeButton.textContent = '❤️';
+            } else {
+                likeButton.textContent = '🤍';
+            }
+        }
+
+        function toggleupload(){
+            const upload = document.getElementById('upload');
+            body = document.body
+            if(upload.style.display === 'none'){
+                upload.style.display = 'block';
+                body.style.overflow = 'hidden'
+            } else {
+            upload.style.display = 'none';
+            body.style.overflow = 'auto'
+            }
+        }
+
+        function toggleComments(videoId) {
+            const commentList = document.getElementById(`comment-list-${videoId}`);
+            const commentInput = document.getElementById(`comment-input-${videoId}`);
+            const isVisible = commentList.style.display === 'block';
+            commentList.style.display = isVisible ? 'none' : 'block';
+            commentInput.style.display = isVisible ? 'none' : 'block';
+
+            if (!isVisible) {
+                fetch(`http://localhost:5002/comments/${videoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        commentList.innerHTML = '';
+                        data.forEach(comment => {
+                            addCommentToDOM(videoId, comment);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching comments:', error);
+                    });
+            }
+        }
+
+        function submitComment(videoId) {
+            const commentInput = document.getElementById(`comment-${videoId}`);
+            let commentContent = commentInput.value;
+
+            commentContent = commentContent
+                .split('\n')
+                .filter(line => line.trim() !== '')
+                .map(line => line.trim())
+                .join('\n');
+
+            if (!commentContent) {
+                alert('Please enter a comment.');
+                return;
+            }
+
+            const userId = "{{ user_id }}";
+
+            fetch('http://localhost:5002/comments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    video_id: videoId,
+                    comment: commentContent,
+                    user_id: userId
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Comment added successfully!") {
+                    addCommentToDOM(videoId, { user_id: userId, content: commentContent });
+                    commentInput.value = '';
+                } else {
+                    alert('Failed to add comment.');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding comment:', error);
+                alert('Could not add comment.');
+            });
+        }
+
+        function addCommentToDOM(videoId, comment) {
+            const commentList = document.getElementById(`comment-list-${videoId}`);
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'commentt';
+            commentDiv.innerHTML = `
+                <div class="user-id"><strong>User ${comment.user_id}</strong></div>
+                <div class="content">${comment.content}</div>
+            `;
+            commentList.appendChild(commentDiv);
+        }
+
+        document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+    event.preventDefault(); // Prevent the form from reloading the page
+    
+    const formData = new FormData(this); // Collect form data
+    
+    try {
+        const response = await fetch("/videos?token={{ request.args.get('token') }}", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            // Handle success - display a message or refresh part of the page
+            alert("Video uploaded successfully!");
+            window.location.reload();
+            // Optionally, reload the video list or add the new video to the page dynamically
+        } else {
+            const data = await response.json();
+            alert(data.message || "Failed to upload video.");
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error("Error uploading video:", error);
+        alert("Error uploading video. Please try again.");
+        window.location.reload();
+    }
+});
+
+    </script>
+</body>
+</html>
